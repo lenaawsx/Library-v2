@@ -1,3 +1,4 @@
+
 import { NavLink, Outlet } from 'react-router'
 
 export function AppLayout() {
@@ -16,6 +17,10 @@ export function AppLayout() {
           </NavLink>
         </nav>
       </header>
+
+      <p className="storage-notice">
+        Изменения хранятся только до обновления страницы.
+      </p>
 
       <main>
         <Outlet />

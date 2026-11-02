@@ -9,3 +9,5 @@ export type Book = {
   rating: number | null
   note: string
 }
+// 3
+export type BookDraft = Omit<Book, 'id'> 
