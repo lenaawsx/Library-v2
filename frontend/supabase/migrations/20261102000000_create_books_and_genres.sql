@@ -1,4 +1,4 @@
--- Таблица жанров
+// Таблица жанров создали
 create table public.genres (
   id text primary key,
   name text not null unique,
@@ -6,7 +6,7 @@ create table public.genres (
     check (length(trim(name)) > 0)
 );
 
--- Таблица книг
+// Таблица книг
 create table public.books (
   id uuid primary key default gen_random_uuid(),
   owner_id uuid not null references auth.users(id) on delete cascade,
@@ -31,15 +31,15 @@ create table public.books (
     check (rating is null or rating between 1 and 5)
 );
 
--- Включаем защиту строк
+// Включаем защиту строк
 alter table public.genres enable row level security;
 alter table public.books enable row level security;
 
--- Запрещаем доступ клиентским ролям по умолчанию
+// Запрещаем доступ клиентским ролям по умолчанию
 revoke all on table public.genres from anon, authenticated;
 revoke all on table public.books from anon, authenticated;
 
--- Разрешаем только чтение справочника жанров
+// Разрешаем только чтение справочника жанров
 grant usage on schema public to anon, authenticated;
 grant select on table public.genres to anon, authenticated;
 

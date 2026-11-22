@@ -5,7 +5,7 @@ import { BookForm } from '../components/BookForm'
 
 type EditBookPageProps = {
   books: Book[]
-  onUpdate: (id: string, draft: BookDraft) => void
+  onUpdate: (id: string, draft: BookDraft) => void | Promise<void>
 }
 
 export function EditBookPage({ books, onUpdate }: EditBookPageProps) {
@@ -35,8 +35,8 @@ export function EditBookPage({ books, onUpdate }: EditBookPageProps) {
     note: book.note,
   }
 
-  function handleSave(draft: BookDraft) {
-    onUpdate(book.id, draft)
+  async function handleSave(draft: BookDraft) {
+    await onUpdate(book.id, draft)
     navigate(`/books/${book.id}`)
   }
 

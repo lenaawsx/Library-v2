@@ -1,28 +1,45 @@
 
+import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import type { Book } from '../types/book'
 
 type BookDetailsPageProps = {
   books: Book[]
-  onDelete: (id: string) => void
+  onDelete: (id: string) => void | Promise<void>
 }
 
 export function BookDetailsPage({ books, onDelete }: BookDetailsPageProps) {
   const { id } = useParams()
   const navigate = useNavigate()
 
+  const [error, setError] = useState('')
+  const [deleting, setDeleting] = useState(false)
+
   const book = books.find((item) => item.id === id)
 
-  function handleDelete() {
-    if (!book) return
+  async function handleDelete() {
+    if (!book || deleting) return
 
     const confirmed = window.confirm(
       `Удалить книгу «${book.title}»?`
     )
 
-    if (confirmed) {
-      onDelete(book.id)
+    if (!confirmed) return
+
+    setError('')
+    setDeleting(true)
+
+    try {
+      await onDelete(book.id)
       navigate('/books')
+    } catch (error: unknown) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : 'Не удалось удалить книгу.'
+      )
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -56,10 +73,16 @@ export function BookDetailsPage({ books, onDelete }: BookDetailsPageProps) {
       </p>
       <p><strong>Заметка:</strong> {book.note}</p>
 
+      {error && <p role="alert">{error}</p>}
+
       <Link to={`/books/${book.id}/edit`}>Редактировать</Link>
       {' '}
-      <button type="button" onClick={handleDelete}>
-        Удалить книгу
+      <button
+        type="button"
+        onClick={handleDelete}
+        disabled={deleting}
+      >
+        {deleting ? 'Удаление...' : 'Удалить книгу'}
       </button>
       {' '}
       <Link to="/books">К списку книг</Link>

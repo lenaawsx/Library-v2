@@ -1,6 +1,6 @@
 insert into public.genres (id, name)
 values
-  ('fantasy', 'Фэнтези'),
+  ('test', 'test'),
   ('detective', 'Детектив'),
   ('romance', 'Романтика'),
   ('science-fiction', 'Фантастика'),

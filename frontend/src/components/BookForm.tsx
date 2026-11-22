@@ -6,13 +6,14 @@ import { useGenres } from '../hooks/useGenres' //4
 
 type BookFormProps = {
   initialValues: BookDraft
-  onSave: (draft: BookDraft) => void
+  onSave: (draft: BookDraft) => void | Promise<void>
   onCancel: () => void
 }
 
 export function BookForm({ initialValues, onSave, onCancel }: BookFormProps) {
   const [draft, setDraft] = useState<BookDraft>(() => ({ ...initialValues }))
   const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
   const { load, retry } = useGenres() //4
 
   const genres = load.status === 'success' ? load.data : [] //4
@@ -21,12 +22,14 @@ export function BookForm({ initialValues, onSave, onCancel }: BookFormProps) {
   )
   const canSave = load.status === 'success' && selectedGenreExists //4
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!canSave) { //4
-      setError('Дождитесь загрузки жанров и выберите доступный жанр.') //4
-      return //4
+    if (saving) return
+
+    if (!canSave) {
+      setError('Дождитесь загрузки жанров и выберите доступный жанр.')
+      return
     }
 
     const title = draft.title.trim()
@@ -49,7 +52,25 @@ export function BookForm({ initialValues, onSave, onCancel }: BookFormProps) {
     }
 
     setError('')
-    onSave({ ...draft, title, author, genre, note: draft.note.trim() })
+    setSaving(true)
+
+    try {
+      await onSave({
+        ...draft,
+        title,
+        author,
+        genre,
+        note: draft.note.trim(),
+      })
+    } catch (error: unknown) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : 'Не удалось сохранить книгу.',
+      )
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -199,10 +220,10 @@ export function BookForm({ initialValues, onSave, onCancel }: BookFormProps) {
 
       {error && <p role="alert">{error}</p>}
 
-      <button type="submit" disabled={!canSave}>
-        Сохранить
+      <button type="submit" disabled={!canSave || saving}>
+        {saving ? 'Сохранение...' : 'Сохранить'}
       </button>
-      <button type="button" onClick={onCancel}>
+      <button type="button" onClick={onCancel} disabled={saving}>
         Отмена
       </button>
     </form>

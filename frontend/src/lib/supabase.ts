@@ -7,4 +7,4 @@ if (!url || !publishableKey) {
   throw new Error('Не настроены переменные Supabase в .env.local')
 }
 
-export const supabase = createClient(url, publishableKey)
+export const supabase = createClient(url, publishableKey) 

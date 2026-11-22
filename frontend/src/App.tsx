@@ -1,34 +1,61 @@
 
-import { useState } from 'react' //3
+import { useEffect, useState } from 'react'
 import { Navigate, Route, Routes } from 'react-router'
-import type { Book, BookDraft } from './types/book' //3
-import { books as initialBooks } from './data/books' //3
+import type { Book, BookDraft } from './types/book'
 
-import { AppLayout } from './app/AppLayout.tsx'
-import { BooksPage } from './pages/BooksPage.tsx'
-import { BookDetailsPage } from './pages/BookDetailsPage.tsx'
-import { NewBookPage } from './pages/NewBookPage.tsx'
-import { NotFoundPage } from './pages/NotFoundPage.tsx'
-import { EditBookPage } from './pages/EditBookPage' //3
+import { AppLayout } from './app/AppLayout'
+import { BooksPage } from './pages/BooksPage'
+import { BookDetailsPage } from './pages/BookDetailsPage'
+import { NewBookPage } from './pages/NewBookPage'
+import { NotFoundPage } from './pages/NotFoundPage'
+import { EditBookPage } from './pages/EditBookPage'
+import { AuthPage } from './pages/auth/AuthPage'
+import { RequireAuth } from './components/RequireAuth'
+import { useAuth } from './hooks/useAuth'
+import { useBooks } from './hooks/useBooks'
+
+import {
+  createBook as saveBook,
+  updateBook as saveBookUpdate,
+  deleteBook as removeBook,
+} from './services/books'
+
 import './App.css'
 
 export default function App() {
-  //3 Общий список книг хранится в App
-  const [books, setBooks] = useState<Book[]>(() =>
-    initialBooks.map((book) => ({ ...book }))
-  )
+  const auth = useAuth()
 
-  //3 Создание книги
-  function createBook(draft: BookDraft): string {
-    const id = crypto.randomUUID()
+  const userId =
+    auth.status === 'authenticated'
+      ? auth.session.user.id
+      : ''
+
+  const { load, reload } = useBooks(userId)
+
+  const [books, setBooks] = useState<Book[]>([])
+
+  useEffect(() => {
+    if (load.status === 'success') {
+      setBooks(load.data)
+    } else {
+      setBooks([])
+    }
+  }, [load])
+
+  async function createBook(draft: BookDraft): Promise<string> {
+    const id = await saveBook(draft)
 
     setBooks((current) => [...current, { ...draft, id }])
 
     return id
   }
 
-  //3 Редактирование книги
-  function updateBook(id: string, draft: BookDraft): void {
+  async function updateBook(
+    id: string,
+    draft: BookDraft
+  ): Promise<void> {
+    await saveBookUpdate(id, draft)
+
     setBooks((current) =>
       current.map((book) =>
         book.id === id ? { ...draft, id: book.id } : book
@@ -36,41 +63,82 @@ export default function App() {
     )
   }
 
-  //3 Удаление книги
-  function deleteBook(id: string): void {
-    setBooks((current) => current.filter((book) => book.id !== id))
+  async function deleteBook(id: string): Promise<void> {
+    await removeBook(id)
+
+    setBooks((current) =>
+      current.filter((book) => book.id !== id)
+    )
   }
+
+  const booksUnavailable =
+    load.status === 'loading' ? (
+      <p>Загружаем книги...</p>
+    ) : load.status === 'error' ? (
+      <section>
+        <p role="alert">{load.message}</p>
+        <button type="button" onClick={() => void reload()}>
+          Повторить загрузку
+        </button>
+      </section>
+    ) : null
 
   return (
     <Routes>
-      <Route element={<AppLayout />}>
-        <Route index element={<Navigate to="/books" replace />} />
+      <Route path="/auth" element={<AuthPage />} />
 
-        {/*3 Список книг получает общий список */}
+      <Route element={<RequireAuth auth={auth} />}>
         <Route
-          path="books"
-          element={<BooksPage books={books} />}
-        />
+          element={
+            <AppLayout
+              email={
+                auth.status === 'authenticated'
+                  ? auth.session.user.email ?? ''
+                  : ''
+              }
+            />
+          }
+        >
+          <Route index element={<Navigate to="/books" replace />} />
 
-        {/*3 Создание получает функцию добавления */}
-        <Route
-          path="books/new"
-          element={<NewBookPage onCreate={createBook} />}
-        />
+          <Route
+            path="books"
+            element={
+              booksUnavailable ?? <BooksPage books={books} />
+            }
+          />
 
-        {/*3 Редактирование книги */}
-        <Route
-          path="books/:id/edit"
-          element={<EditBookPage books={books} onUpdate={updateBook} />}
-        />
+          <Route
+            path="books/new"
+            element={<NewBookPage onCreate={createBook} />}
+          />
 
-        {/*3 Карточка получает список и функцию удаления */}
-        <Route
-          path="books/:id"
-          element={<BookDetailsPage books={books} onDelete={deleteBook} />}
-        />
+          <Route
+            path="books/:id/edit"
+            element={
+              booksUnavailable ?? (
+                <EditBookPage
+                  books={books}
+                  onUpdate={updateBook}
+                />
+              )
+            }
+          />
 
-        <Route path="*" element={<NotFoundPage />} />
+          <Route
+            path="books/:id"
+            element={
+              booksUnavailable ?? (
+                <BookDetailsPage
+                  books={books}
+                  onDelete={deleteBook}
+                />
+              )
+            }
+          />
+
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
       </Route>
     </Routes>
   )
