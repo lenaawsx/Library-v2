@@ -1,7 +1,11 @@
 
 import { useEffect, useState } from 'react'
 import type { Book } from '../types/book'
-import { getBooks } from '../services/books'
+import {
+  getBooks,
+  type BookFilters,
+  emptyBookFilters,
+} from '../services/books'
 
 type BooksLoad =
   | { status: 'loading' }
@@ -13,18 +17,42 @@ export function useBooks(userId: string) {
     status: 'loading',
   })
 
+  //7
+  async function reload(
+    filters: BookFilters = emptyBookFilters,
+  ): Promise<Book[] | null> {
+    if (!userId) {
+      setLoad({ status: 'success', data: [] })
+      return []
+    }
+
+    setLoad({ status: 'loading' })
+
+    try {
+      const data = await getBooks(filters)
+      setLoad({ status: 'success', data })
+      return data
+    } catch (error: unknown) {
+      setLoad({
+        status: 'error',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Не удалось загрузить книги.',
+      })
+      return null
+    }
+  }
+
   useEffect(() => {
     let active = true
 
-    if (!userId) {
-      setLoad({ status: 'success', data: [] })
-
-      return () => {
-        active = false
-      }
-    }
-
     async function loadBooks() {
+      if (!userId) {
+        setLoad({ status: 'success', data: [] })
+        return
+      }
+
       setLoad({ status: 'loading' })
 
       try {
@@ -53,27 +81,7 @@ export function useBooks(userId: string) {
     }
   }, [userId])
 
-  async function reload(): Promise<Book[] | null> {
-    if (!userId) return []
-
-    setLoad({ status: 'loading' })
-
-    try {
-      const data = await getBooks()
-      setLoad({ status: 'success', data })
-      return data
-    } catch (error: unknown) {
-      setLoad({
-        status: 'error',
-        message:
-          error instanceof Error
-            ? error.message
-            : 'Не удалось загрузить книги.',
-      })
-      return null
-    }
-  }
-
+  //7
   function addBook(book: Book) {
     setLoad((current) =>
       current.status === 'success'

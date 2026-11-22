@@ -58,7 +58,7 @@ export function BookDetailsPage({ books, onDelete }: BookDetailsPageProps) {
       <h1>{book.title}</h1>
 
       <p><strong>Автор:</strong> {book.author}</p>
-      <p><strong>Жанр:</strong> {book.genre}</p>
+      <p><strong>Жанр:</strong> {book.genreName}</p> {/*7*/}
       <p>
         <strong>Статус:</strong>{' '}
         {book.status === 'read'

@@ -1,3 +1,4 @@
+
 import { Link } from 'react-router'
 import type { Book } from '../types/book.ts'
 
@@ -13,7 +14,7 @@ export function BookCard({ book }: BookCardProps) {
       </h2>
 
       <p>Автор: {book.author}</p>
-      <p>Жанр: {book.genre}</p>
+      <p>Жанр: {book.genreName}</p> {/*7*/}
       <p>Статус: {book.status}</p>
       <p>
         Оценка: {book.rating === null ? 'не поставлена' : `${book.rating}/5`}

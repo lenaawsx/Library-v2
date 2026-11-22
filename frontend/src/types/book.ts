@@ -1,3 +1,4 @@
+
 export type BookStatus = 'planned' | 'reading' | 'read'
 
 export type Book = {
@@ -5,9 +6,12 @@ export type Book = {
   title: string
   author: string
   genre: string
+  genreName: string //7
   status: BookStatus
   rating: number | null
   note: string
 }
+
 // 3
-export type BookDraft = Omit<Book, 'id'> 
+//7
+export type BookDraft = Omit<Book, 'id' | 'genreName'>

@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { Navigate, Route, Routes } from 'react-router'
 import type { Book, BookDraft } from './types/book'
+import type { BookFilters } from './services/books'
 
 import { AppLayout } from './app/AppLayout'
 import { BooksPage } from './pages/BooksPage'
@@ -18,6 +19,7 @@ import {
   createBook as saveBook,
   updateBook as saveBookUpdate,
   deleteBook as removeBook,
+  getBooks,
 } from './services/books'
 
 import './App.css'
@@ -42,10 +44,17 @@ export default function App() {
     }
   }, [load])
 
+  //7
+  async function applyBookFilters(filters: BookFilters): Promise<void> {
+    await reload(filters)
+  }
+
   async function createBook(draft: BookDraft): Promise<string> {
     const id = await saveBook(draft)
 
-    setBooks((current) => [...current, { ...draft, id }])
+    //7
+    const updatedBooks = await getBooks()
+    setBooks(updatedBooks)
 
     return id
   }
@@ -56,19 +65,17 @@ export default function App() {
   ): Promise<void> {
     await saveBookUpdate(id, draft)
 
-    setBooks((current) =>
-      current.map((book) =>
-        book.id === id ? { ...draft, id: book.id } : book
-      )
-    )
+    //7
+    const updatedBooks = await getBooks()
+    setBooks(updatedBooks)
   }
 
   async function deleteBook(id: string): Promise<void> {
     await removeBook(id)
 
-    setBooks((current) =>
-      current.filter((book) => book.id !== id)
-    )
+    //7
+    const updatedBooks = await getBooks()
+    setBooks(updatedBooks)
   }
 
   const booksUnavailable =
@@ -104,7 +111,12 @@ export default function App() {
           <Route
             path="books"
             element={
-              booksUnavailable ?? <BooksPage books={books} />
+              booksUnavailable ?? (
+                <BooksPage
+                  books={books}
+                  onApplyFilters={applyBookFilters}
+                />
+              )
             }
           />
 
